@@ -5,8 +5,8 @@ version = "0.5.0"
 # your project to the Hex package manager.
 #
 # description = ""
-# licences = ["Apache-2.0"]
-# repository = { type = "github", user = "", repo = "" }
+licences = ["MIT"]
+repository = { type = "github", user = "bitbldr", repo = "sprocket_mist" }
 # links = [{ title = "Website", href = "" }]
 #
 # For a full reference of all the available options, you can have a look at
