@@ -15,10 +15,9 @@ import mist.{
   type WebsocketMessage,
 }
 import sprocket.{
-  type Sprocket, type StatefulComponent, client_message_decoder, render,
-  runtime_message_to_json,
+  type Sprocket, client_message_decoder, encode_runtime_message, render,
 }
-import sprocket/context.{type Element}
+import sprocket/component.{type Element, type StatefulComponent} as sprocket_component
 import sprocket/internal/logger
 import sprocket/renderers/html.{html_renderer}
 import sprocket/runtime.{type ClientMessage, type RuntimeMessage}
@@ -76,7 +75,7 @@ pub fn component(
     }
 
     _ -> {
-      let el = sprocket.component(component, initialize_props(None))
+      let el = sprocket_component.component(component, initialize_props(None))
 
       let body = render(el, html_renderer())
 
@@ -188,11 +187,14 @@ fn component_handler(
             })
 
             let el =
-              sprocket.component(component, initialize_props(initial_props))
+              sprocket_component.component(
+                component,
+                initialize_props(initial_props),
+              )
 
             let dispatch = fn(runtime_message: RuntimeMessage) {
               runtime_message
-              |> runtime_message_to_json()
+              |> encode_runtime_message()
               |> json.to_string()
               |> ws_send()
             }
@@ -256,7 +258,7 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
 
             let dispatch = fn(event: RuntimeMessage) {
               event
-              |> runtime_message_to_json()
+              |> encode_runtime_message()
               |> json.to_string()
               |> ws_send()
             }
