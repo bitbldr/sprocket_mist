@@ -1,5 +1,5 @@
 import gleam/bytes_tree
-import gleam/dict.{type Dict}
+import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/erlang/process.{type Selector}
 import gleam/function
@@ -48,7 +48,7 @@ type State {
 ///    `/connect` to the request path. Once the connection is established, the client will
 ///    send a `join` message to the server with the CSRF token and initial props. The server
 ///    will then start the sprocket runtime with the component and initialize props using
-///    the `initialize_props` function with `Some(Dict(String, String))`. Once the runtime is
+///    the `initialize_props` function with `Some(Dynamic)`. Once the runtime is
 ///    started, the server will render the component with the initial props and send the
 ///    full rendered DOM to the client. The client will then be able to send messages to the server
 ///    and receive patch updates from the server.
@@ -60,7 +60,7 @@ type State {
 pub fn component(
   req: Request(Connection),
   component: StatefulComponent(p),
-  initialize_props: fn(Option(Dict(String, String))) -> p,
+  initialize_props: fn(Option(Dynamic)) -> p,
   validate_csrf: CSRFValidator,
 ) -> Response(ResponseData) {
   // if the request path ends with "connect", then start a websocket connection
@@ -163,14 +163,14 @@ type Message {
   JoinMessage(
     id: Option(String),
     csrf_token: String,
-    initial_props: Option(Dict(String, String)),
+    initial_props: Option(Dynamic),
   )
   Message(msg: ClientMessage)
 }
 
 fn component_handler(
   component: StatefulComponent(p),
-  initialize_props: fn(Option(Dict(String, String))) -> p,
+  initialize_props: fn(Option(Dynamic)) -> p,
   validate_csrf: CSRFValidator,
 ) {
   fn(state: State, conn: WebsocketConnection, message: WebsocketMessage(String)) {
@@ -371,7 +371,7 @@ fn join_message_decoder() {
   use initial_props <- decode.optional_field(
     "initialProps",
     None,
-    decode.optional(decode.dict(decode.string, decode.string)),
+    decode.optional(decode.dynamic),
   )
 
   decode.success(JoinMessage(id, csrf_token, initial_props))
