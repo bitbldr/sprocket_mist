@@ -1,10 +1,10 @@
 name = "sprocket_mist"
-version = "0.5.0"
+version = "1.0.0"
 
 # Fill out these fields if you intend to generate HTML documentation or publish
 # your project to the Hex package manager.
 #
-# description = ""
+description = "A library for serving sprocket apps using the mist web server"
 licences = ["MIT"]
 repository = { type = "github", user = "bitbldr", repo = "sprocket_mist" }
 # links = [{ title = "Website", href = "" }]
