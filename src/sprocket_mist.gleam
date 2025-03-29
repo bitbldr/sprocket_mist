@@ -14,20 +14,19 @@ import mist.{
   type Connection, type ResponseData, type WebsocketConnection,
   type WebsocketMessage,
 }
-import sprocket.{
-  type Sprocket, client_message_decoder, encode_runtime_message, render,
-}
-import sprocket/component.{type Element, type StatefulComponent} as sprocket_component
+import sprocket.{type Element, type StatefulComponent}
 import sprocket/internal/logger
+import sprocket/json.{client_message_decoder, encode_runtime_message} as _
+import sprocket/render.{render}
 import sprocket/renderers/html.{html_renderer}
-import sprocket/runtime.{type ClientMessage, type RuntimeMessage}
+import sprocket/runtime.{type ClientMessage, type Runtime, type RuntimeMessage}
 
 pub type CSRFValidator =
   fn(String) -> Result(Nil, Nil)
 
 type State {
   Initialized(ws_send: fn(String) -> Result(Nil, Nil))
-  Running(Sprocket)
+  Running(Runtime)
 }
 
 /// Component
@@ -75,7 +74,7 @@ pub fn component(
     }
 
     _ -> {
-      let el = sprocket_component.component(component, initialize_props(None))
+      let el = sprocket.component(component, initialize_props(None))
 
       let body = render(el, html_renderer())
 
@@ -153,7 +152,7 @@ fn terminator() {
   fn(state: State) {
     use spkt <- require_running(state, or_else: fn() { Nil })
 
-    let _ = sprocket.shutdown(spkt)
+    let _ = runtime.stop(spkt)
 
     Nil
   }
@@ -187,10 +186,7 @@ fn component_handler(
             })
 
             let el =
-              sprocket_component.component(
-                component,
-                initialize_props(initial_props),
-              )
+              sprocket.component(component, initialize_props(initial_props))
 
             let dispatch = fn(runtime_message: RuntimeMessage) {
               runtime_message
@@ -199,14 +195,12 @@ fn component_handler(
               |> ws_send()
             }
 
-            let spkt =
-              sprocket.start(el, dispatch)
-              |> result.map_error(sprocket.humanize_error)
+            let spkt = runtime.start(el, dispatch)
 
             case spkt {
               Ok(spkt) -> actor.continue(Running(spkt))
               Error(err) -> {
-                logger.error("Failed to start sprocket: " <> err)
+                logger.error_meta("Failed to start sprocket: ", err)
 
                 actor.continue(state)
               }
@@ -229,7 +223,7 @@ fn component_handler(
           actor.continue(state)
         })
 
-        sprocket.handle_client_message(spkt, client_message)
+        runtime.handle_client_message(spkt, client_message)
 
         actor.continue(state)
       }
@@ -263,14 +257,12 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
               |> ws_send()
             }
 
-            let spkt =
-              sprocket.start(el, dispatch)
-              |> result.map_error(sprocket.humanize_error)
+            let spkt = runtime.start(el, dispatch)
 
             case spkt {
               Ok(spkt) -> actor.continue(Running(spkt))
               Error(err) -> {
-                logger.error("Failed to start sprocket: " <> err)
+                logger.error_meta("Failed to start sprocket: ", err)
 
                 actor.continue(state)
               }
@@ -293,7 +285,7 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
           actor.continue(state)
         })
 
-        sprocket.handle_client_message(spkt, client_message)
+        runtime.handle_client_message(spkt, client_message)
 
         actor.continue(state)
       }
@@ -344,7 +336,7 @@ fn require_initialized(
 fn require_running(
   state: State,
   or_else bail: fn() -> a,
-  cb cb: fn(Sprocket) -> a,
+  cb cb: fn(Runtime) -> a,
 ) {
   case state {
     Running(spkt) -> cb(spkt)
