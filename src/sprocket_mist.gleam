@@ -17,7 +17,7 @@ import mist.{
 import sprocket.{type Element, type StatefulComponent}
 import sprocket/internal/logger
 import sprocket/json.{client_message_decoder, encode_runtime_message} as _
-import sprocket/render.{render}
+import sprocket/render.{render_element}
 import sprocket/renderers/html.{html_renderer}
 import sprocket/runtime.{type ClientMessage, type Runtime, type RuntimeMessage}
 
@@ -76,7 +76,7 @@ pub fn component(
     _ -> {
       let el = sprocket.component(component, initialize_props(None))
 
-      let body = render(el, html_renderer())
+      let body = render_element(el, html_renderer())
 
       response.new(200)
       |> response.prepend_header("content-type", "text/html")
@@ -117,7 +117,7 @@ pub fn view(
       )
     }
     _ -> {
-      let body = render(layout(el), html_renderer())
+      let body = render_element(layout(el), html_renderer())
 
       response.new(200)
       |> response.prepend_header("content-type", "text/html")

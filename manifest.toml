@@ -17,7 +17,7 @@ packages = [
   { name = "ids", version = "0.14.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_otp", "gleam_regexp", "gleam_stdlib", "gleam_yielder"], otp_app = "ids", source = "hex", outer_checksum = "ECDE8894EDBA5F05C47A35AD4420D99C8D8B25C23A793EDE2123D6DC2E9B1AA2" },
   { name = "logging", version = "1.3.0", build_tools = ["gleam"], requirements = ["gleam_stdlib"], otp_app = "logging", source = "hex", outer_checksum = "1098FBF10B54B44C2C7FDF0B01C1253CAFACDACABEFB4B0D027803246753E06D" },
   { name = "mist", version = "4.0.6", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_http", "gleam_otp", "gleam_stdlib", "gleam_yielder", "glisten", "gramps", "hpack_erl", "logging"], otp_app = "mist", source = "hex", outer_checksum = "ED319E5A7F2056E08340B6976EA5E717F3C3BB36056219AF826D280D9C077952" },
-  { name = "sprocket", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_json", "gleam_otp", "gleam_regexp", "gleam_stdlib", "ids"], source = "git", repo = "https://github.com/bitbldr/sprocket.git", commit = "5705be10ab87f3d6bcdb1842d769137095148b7f" },
+  { name = "sprocket", version = "1.0.0", build_tools = ["gleam"], requirements = ["gleam_erlang", "gleam_json", "gleam_otp", "gleam_regexp", "gleam_stdlib", "ids"], source = "git", repo = "https://github.com/bitbldr/sprocket.git", commit = "e9c9bff71ab7f686e27d90b3e782a07dba7548c9" },
   { name = "telemetry", version = "1.3.0", build_tools = ["rebar3"], requirements = [], otp_app = "telemetry", source = "hex", outer_checksum = "7015FC8919DBE63764F4B4B87A95B7C0996BD539E0D499BE6EC9D7F3875B79E6" },
 ]
 
