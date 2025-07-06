@@ -2,13 +2,11 @@ import gleam/bytes_tree
 import gleam/dynamic.{type Dynamic}
 import gleam/dynamic/decode
 import gleam/erlang/process.{type Selector}
-import gleam/function
 import gleam/http/request.{type Request}
 import gleam/http/response.{type Response}
 import gleam/json
 import gleam/list
 import gleam/option.{type Option, None, Some}
-import gleam/otp/actor
 import gleam/result
 import mist.{
   type Connection, type ResponseData, type WebsocketConnection,
@@ -134,9 +132,7 @@ fn initializer() {
   fn(_conn: WebsocketConnection) -> #(State, Option(Selector(String))) {
     let self = process.new_subject()
 
-    let selector =
-      process.new_selector()
-      |> process.selecting(self, function.identity)
+    let selector = process.select(process.new_selector(), self)
 
     // Create a function that will send messages to this websocket
     let ws_send = fn(msg) {
@@ -172,7 +168,7 @@ fn component_handler(
   initialize_props: fn(Option(Dynamic)) -> p,
   validate_csrf: CSRFValidator,
 ) {
-  fn(state: State, conn: WebsocketConnection, message: WebsocketMessage(String)) {
+  fn(state: State, message: WebsocketMessage(String), conn: WebsocketConnection) {
     use msg <- mist_text_message(conn, state, message)
 
     case decode_message(msg) {
@@ -182,7 +178,7 @@ fn component_handler(
             use ws_send <- require_initialized(state, or_else: fn() {
               logger.error("Sprocket must be initialized first before joining")
 
-              actor.continue(state)
+              mist.continue(state)
             })
 
             let el =
@@ -198,11 +194,11 @@ fn component_handler(
             let spkt = runtime.start(el, dispatch)
 
             case spkt {
-              Ok(spkt) -> actor.continue(Running(spkt))
+              Ok(spkt) -> mist.continue(Running(spkt))
               Error(err) -> {
                 logger.error_meta("Failed to start sprocket: ", err)
 
-                actor.continue(state)
+                mist.continue(state)
               }
             }
           }
@@ -210,7 +206,7 @@ fn component_handler(
           Error(_) -> {
             logger.error("Invalid CSRF token")
 
-            actor.continue(state)
+            mist.continue(state)
           }
         }
       }
@@ -220,24 +216,24 @@ fn component_handler(
             "Sprocket must be connected first before receiving events",
           )
 
-          actor.continue(state)
+          mist.continue(state)
         })
 
         runtime.handle_client_message(spkt, client_message)
 
-        actor.continue(state)
+        mist.continue(state)
       }
       err -> {
         logger.error_meta("Error decoding message: " <> msg, err)
 
-        actor.continue(state)
+        mist.continue(state)
       }
     }
   }
 }
 
 fn view_handler(el: Element, validate_csrf: CSRFValidator) {
-  fn(state: State, conn: WebsocketConnection, message: WebsocketMessage(String)) {
+  fn(state: State, message: WebsocketMessage(String), conn: WebsocketConnection) {
     use msg <- mist_text_message(conn, state, message)
 
     case decode_message(msg) {
@@ -247,7 +243,7 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
             use ws_send <- require_initialized(state, or_else: fn() {
               logger.error("Sprocket must be initialized first before joining")
 
-              actor.continue(state)
+              mist.continue(state)
             })
 
             let dispatch = fn(event: RuntimeMessage) {
@@ -260,11 +256,11 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
             let spkt = runtime.start(el, dispatch)
 
             case spkt {
-              Ok(spkt) -> actor.continue(Running(spkt))
+              Ok(spkt) -> mist.continue(Running(spkt))
               Error(err) -> {
                 logger.error_meta("Failed to start sprocket: ", err)
 
-                actor.continue(state)
+                mist.continue(state)
               }
             }
           }
@@ -272,7 +268,7 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
           Error(_) -> {
             logger.error("Invalid CSRF token")
 
-            actor.continue(state)
+            mist.continue(state)
           }
         }
       }
@@ -282,17 +278,17 @@ fn view_handler(el: Element, validate_csrf: CSRFValidator) {
             "Sprocket must be connected first before receiving events",
           )
 
-          actor.continue(state)
+          mist.continue(state)
         })
 
         runtime.handle_client_message(spkt, client_message)
 
-        actor.continue(state)
+        mist.continue(state)
       }
       other -> {
         logger.error_meta("Error decoding message '" <> msg, other)
 
-        actor.continue(state)
+        mist.continue(state)
       }
     }
   }
@@ -306,7 +302,7 @@ fn mist_text_message(
 ) {
   case message {
     mist.Text(msg) -> cb(msg)
-    mist.Binary(_) -> actor.continue(state)
+    mist.Binary(_) -> mist.continue(state)
     mist.Custom(msg) -> {
       let _ =
         mist.send_text_frame(conn, msg)
@@ -316,9 +312,9 @@ fn mist_text_message(
           Nil
         })
 
-      actor.continue(state)
+      mist.continue(state)
     }
-    mist.Closed | mist.Shutdown -> actor.Stop(process.Normal)
+    mist.Closed | mist.Shutdown -> mist.stop()
   }
 }
 
